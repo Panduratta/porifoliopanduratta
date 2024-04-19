@@ -1,59 +1,83 @@
-<!doctype html>
-<html>
-<head>
-<link href="style.css" rel="stylesheet">
-<style>
+# R3S Chat
+# botao de iniciar chat
+# popup para entrar no chat
+# quando entrar no chat: (aparece para todo mundo)
+    # a mensagem que você entrou no chat
+    # o campo e o botão de enviar mensagem
+# a cada mensagem que você envia (aparece para todo mundo)
+    # Nome: Texto da Mensagem
 
-p {
-color:white;
-font-family:courier new;
-font-size:50px;
-}
+# produto["quantidade"]
 
-h1 {
-color:red;
-font-family: Courier;
-text-align:center;
-font-size:70px;
-}
+import flet as ft
 
-a {
-color:red;
-font-size: 25px;
-}
+def main(pagina):
+    texto = ft.Text("R3S")
 
-img {
-    color: white;
-border-radius: 80px;
-border: solid 10px
-}
+    chat = ft.Column()
 
-</style>
+    nome_usuario = ft.TextField(label="Escreva seu nome")
 
-<title>Meu Segundo projeto</title>
-</head>
+    def enviar_mensagem_tunel(mensagem):
+        tipo = mensagem["tipo"]
+        if tipo == "mensagem":
+            texto_mensagem = mensagem["texto"]
+            usuario_mensagem = mensagem["usuario"]
+            # adicionar a mensagem no chat
+            chat.controls.append(ft.Text(f"{usuario_mensagem}: {texto_mensagem}"))
+        else:
+            usuario_mensagem = mensagem["usuario"]
+            chat.controls.append(ft.Text(f"{usuario_mensagem} entrou no chat", 
+                                         size=12, italic=True, color=ft.colors.ORANGE_500))
+        pagina.update()
 
+    pagina.pubsub.subscribe(enviar_mensagem_tunel)
 
-<body style="background-color: black;">
-  
-<h1>SEJAM BEM VINDOS</h1>
+    def enviar_mensagem(evento):
+        pagina.pubsub.send_all({"texto": campo_mensagem.value, "usuario": nome_usuario.value,
+                                "tipo": "mensagem"})
+        # limpar o campo de mensagem
+        campo_mensagem.value = ""
+        pagina.update()
 
-<a href="https://www.youtube.com" >Pagodinhos</a>
+    campo_mensagem = ft.TextField(label="Digite uma mensagem", on_submit=enviar_mensagem)
+    botao_enviar_mensagem = ft.ElevatedButton("Enviar", on_click=enviar_mensagem)
 
-<br>
- 
-<p>Bom aqui vemos que ja esta melhor que o primeiro projeto,sejamos francos, e dificil iniciar um portifolio, bom esse sou eu: </p>
+    def entrar_popup(evento):
+        pagina.pubsub.send_all({"usuario": nome_usuario.value, "tipo": "entrada"})
+        # adicionar o chat
+        pagina.add(chat)
+        # fechar o popup
+        popup.open = False
+        # remover o botao iniciar chat
+        pagina.remove(botao_iniciar)
+        pagina.remove(texto)
+        # criar o campo de mensagem do usuario
+        # criar o botao de enviar mensagem do usuario
+        pagina.add(ft.Row(
+            [campo_mensagem, botao_enviar_mensagem]
+        ))
+        pagina.update()
 
-<img src=https://i1.sndcdn.com/avatars-000278017181-7zhek1-t240x240.jpg>
+    popup = ft.AlertDialog(
+        open=False, 
+        modal=True,
+        title=ft.Text("Bem vindo ao R3S Chat"),
+        content=nome_usuario,
+        actions=[ft.ElevatedButton("Entrar", on_click=entrar_popup)],
+        )
 
-<br>
+    def entrar_chat(evento):
+        pagina.dialog = popup
+        popup.open = True
+        pagina.update()
 
-<p>Na verdade essa foto e antiga, nela eu tinha 18, anos hoje tenho 23, casado com uma mulher incrivel que e  esta sempre ao meu lado e me incentivando a aprender mais e mais, e sempre buscar o melhor para nossa familia, temos um bebe de 24 dias na data de hoje(28/08/23), que tira nossas boas noite de sono kkkkkkk, sao fases que logo passam...
+    botao_iniciar = ft.ElevatedButton("Iniciar chat", on_click=entrar_chat)
 
-<p> Dia 21/08/2023 hoje comecei estudar as linguagens de programacao, comecei com html basico, explicando como começa utilizando a linguagem, comeca se usando !doctype html, para dizer para o site qual modelo do arquivo
-</p>
-<p> atualmente, me enquadro no perfil de dev junior, estou em aprendizado, cada dia estudando mais, para me qualificar melhor no mercado de trabalho</p>
-<br>
- 
-</body>
-</html>
+    pagina.add(texto)
+    pagina.add(botao_iniciar)
+
+ft.app(target=main, view=ft.WEB_BROWSER, port=8000)
+
+# deploy
+
